@@ -1,0 +1,10 @@
+[workspace]
+resolver = "1"
+members = ["lines"]
+
+[workspace.package]
+version = "1.0.0"
+authors = ["Shell"]
+edition = "2021"
+description = "TFL Api Wrapper written in Rust"
+repository = "https://github.com/Shell1010/tfl-rs"
