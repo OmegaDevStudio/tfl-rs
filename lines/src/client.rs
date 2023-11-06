@@ -4,7 +4,7 @@ pub enum TflError {
     HttpError(reqwest::Error),
 }
 
-const ROOT: &str = "https://api.tfl.gov.uk";
+const ROOT: &str = "https://api.tfl.gov.uk/";
 
 #[async_trait]
 pub trait Request {
