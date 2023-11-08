@@ -1,4 +1,5 @@
 use crate::client::Request;
+use reqwest::Client;
 pub enum Mode {
     Bus,
     CableCar,
@@ -45,3 +46,4 @@ impl Request for Mode {
         }
     }
 }
+
