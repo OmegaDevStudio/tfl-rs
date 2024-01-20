@@ -20,11 +20,19 @@ pub enum Line {
     WaterlooCity,
 }
 
-const ROOT: &str = "https://api.tfl.gov.uk/";
 
-impl Request for Line {
-    fn url(&self) ->  &str {
-        // Gathers Route data regarding a line
+
+
+impl Line {
+    pub fn convert(&self, data: String) -> Result<LineRoute, Error> {
+        let data: Result<LineRoute, Error> = from_str(&data);
+        match data {
+            Ok(data) => Ok(data),
+            Err(e) => Err(e)
+        }
+    }
+
+    fn route(&self) -> &str {
         match self {
             Self::District => "Line/District/Route",
             Self::Circle => "Line/Cirlce/Route",
@@ -40,18 +48,8 @@ impl Request for Line {
             Self::WaterlooCity => "Line/Waterloo-City/Route"
         }
     }
-}
 
-impl Line {
-    pub fn convert(&self, data: String) -> Result<LineRoute, Error> {
-        let data: Result<LineRoute, Error> = from_str(&data);
-        match data {
-            Ok(data) => Ok(data),
-            Err(e) => Err(e)
-        }
-    }
-
-    fn stations_url(&self) -> &str {
+    fn stations(&self) -> &str {
         match self {
             Self::District => "Line/District/StopPoints",
             Self::Circle=> "Line/Circle/StopPoints",
@@ -65,23 +63,6 @@ impl Line {
             Self::Piccadilly => "Line/Picadilly/StopPoints",
             Self::Victoria => "Line/Victoria/StopPoints",
             Self::WaterlooCity => "Line/Waterloo-City/StopPoints"
-        }
-    }
-
-    pub async fn stations(&self) -> Result<Vec<StopPoint>, TflError> {
-        let url = format!("{}/{}", ROOT, &self.stations_url());
-        let req = self.req().get(url).send().await;
-        match req {
-            Ok(req) => {
-                match req.text().await {
-                    Ok(text) => {
-                        let data: Vec<StopPoint> = from_str(&text).expect("Query Search");
-                        return Ok(data)
-                    },
-                    Err(e) => return Err(TflError::HttpError(e))
-                }
-            }
-            Err(e) => return Err(TflError::HttpError(e))
         }
     }
 }

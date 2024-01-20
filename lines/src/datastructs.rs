@@ -1,31 +1,39 @@
-use serde::{Serialize, Deserialize};
+use enum_dispatch::enum_dispatch;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-// For Line/Search/<query> - Slightly different to below
-#[derive(Debug, Serialize, Deserialize, Clone)]
+
+#[enum_dispatch]
+pub trait JsonTrait {
+    fn some(&self) -> &str { 
+        "foo"
+    }
+}
+
+// Line/Search/<query>
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct QuerySearch {
     #[serde(rename = "$type")]
     pub type_field: String,
     pub input: String,
-    pub search_matches: Vec<SearchMatch>
+    pub search_matches: Vec<SearchMatch>,
 }
 
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SearchMatch {
     #[serde(rename = "$type")]
     pub type_field: String,
     pub line_id: String,
-    pub mode: String, 
+    pub mode: String,
     pub line_name: String,
     pub line_route_section: Vec<LineRouteSection>,
     pub matched_route_sections: Vec<Value>,
-    pub matched_stops: Vec<Value>
+    pub matched_stops: Vec<Value>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LineRouteSection {
     #[serde(rename = "$type")]
@@ -36,11 +44,11 @@ pub struct LineRouteSection {
     pub from_station: String,
     pub to_station: String,
     pub service_type: String,
-    pub vehicle_destination_text: String
+    pub vehicle_destination_text: String,
 }
 
-// For /Line/<id>/Route - For some reason it's slightly different to above
-#[derive(Debug, Serialize, Deserialize, Clone)]
+// Line/<line>/Route
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LineRoute {
     #[serde(rename = "$type")]
@@ -49,11 +57,15 @@ pub struct LineRoute {
     pub name: String,
     pub mode_name: String,
     pub disruptions: Vec<Value>,
+    pub created: String,
+    pub modified: String,
     pub line_statuses: Vec<Value>,
-    pub route_sections: Vec<RouteSection>
+    pub route_sections: Vec<RouteSection>,
+    pub service_types: Vec<ServiceType>,
+    pub crowding: Crowding,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RouteSection {
     #[serde(rename = "$type")]
@@ -62,65 +74,89 @@ pub struct RouteSection {
     pub direction: String,
     pub origination_name: String,
     pub destination_name: String,
+    pub originator: String,
+    pub destination: String,
     pub service_type: String,
+    pub valid_to: String,
+    pub valid_from: String,
 }
 
-// Line/<id>/StopPoints
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ServiceType {
+    #[serde(rename = "$type")]
+    pub type_field: String,
+    pub name: String,
+    pub uri: String,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Crowding {
+    #[serde(rename = "$type")]
+    pub type_field: String,
+}
+
+// Line/<line>/StopPoints
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StopPoint {
     #[serde(rename = "$type")]
     pub type_field: String,
+    pub naptan_id: String,
     pub modes: Vec<String>,
     pub ics_code: String,
     pub stop_type: String,
     pub station_naptan: String,
-    pub lines: Vec<StopPointLine>,
-    pub line_group: Vec<StopPointLineGroup>,
-    pub line_mode_groups: Vec<StopPointLineModeGroup>,
+    pub lines: Vec<Line>,
+    pub line_group: Vec<LineGroup>,
+    pub line_mode_groups: Vec<LineModeGroup>,
     pub status: bool,
     pub id: String,
     pub common_name: String,
     pub place_type: String,
     pub additional_properties: Vec<AdditionalProperty>,
-    pub children: Vec<StopPointChildren>,
-    pub lat: f32,
-    pub lon: f32
+    pub children: Vec<Children>,
+    pub lat: f64,
+    pub lon: f64,
+    pub hub_naptan_code: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct StopPointLine {
+pub struct Line {
     #[serde(rename = "$type")]
     pub type_field: String,
     pub id: String,
     pub name: String,
+    pub uri: String,
     #[serde(rename = "type")]
-    pub type_field_2: String,
-    pub crowding: Value,
+    pub type_field2: String,
+    pub crowding: Crowding,
     pub route_type: String,
-    pub status: String
+    pub status: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct StopPointLineGroup {
+pub struct LineGroup {
     #[serde(rename = "$type")]
     pub type_field: String,
+    pub naptan_id_reference: Option<String>,
     pub station_atco_code: String,
     pub line_identifier: Vec<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct StopPointLineModeGroup {
+pub struct LineModeGroup {
     #[serde(rename = "$type")]
     pub type_field: String,
     pub mode_name: String,
-    pub line_identifier: Vec<String>
+    pub line_identifier: Vec<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AdditionalProperty {
     #[serde(rename = "$type")]
@@ -128,27 +164,68 @@ pub struct AdditionalProperty {
     pub category: String,
     pub key: String,
     pub source_system_key: String,
-    pub value: String
+    pub value: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct StopPointChildren {
+pub struct Children {
     #[serde(rename = "$type")]
     pub type_field: String,
     pub naptan_id: String,
-    pub modes: Vec<String>,
+    pub modes: Vec<Value>,
     pub ics_code: String,
     pub station_naptan: String,
-    pub lines: Vec<StopPointLine>,
-    pub line_group: Vec<StopPointLineGroup>,
-    pub line_mode_groups: Vec<StopPointLineModeGroup>,
+    pub lines: Vec<Value>,
+    pub line_group: Vec<Value>,
+    pub line_mode_groups: Vec<Value>,
     pub status: bool,
     pub id: String,
     pub common_name: String,
     pub place_type: String,
-    pub additional_properties: Vec<AdditionalProperty>,
-    pub children: Vec<StopPointChildren>,
-    pub lat: f32,
-    pub lon: f32
+    pub additional_properties: Vec<Value>,
+    pub children: Vec<Value>,
+    pub lat: f64,
+    pub lon: f64,
+    pub hub_naptan_code: Option<String>,
+    pub indicator: Option<String>,
+    pub stop_letter: Option<String>,
 }
+
+
+impl JsonTrait for QuerySearch {}
+impl JsonTrait for SearchMatch {}
+impl JsonTrait for LineRouteSection {}
+
+impl JsonTrait for LineRoute {}
+impl JsonTrait for RouteSection {}
+impl JsonTrait for ServiceType {}
+impl JsonTrait for Crowding {}
+
+impl JsonTrait for StopPoint {}
+impl JsonTrait for Line {}
+impl JsonTrait for LineGroup {}
+impl JsonTrait for LineModeGroup {}
+impl JsonTrait for AdditionalProperty {}
+impl JsonTrait for Children {}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[enum_dispatch(JsonTrait)]
+pub enum DataStruct {
+    QuerySearch(QuerySearch),
+    SearchMatch(SearchMatch),
+    LineRouteSection(LineRouteSection),
+    LineRoute(LineRoute),
+    RouteSection(RouteSection),
+    ServiceType(ServiceType),
+    Crowding(Crowding),
+    StopPoint(StopPoint),
+    Line(Line),
+    LineGroup(LineGroup),
+    LineModeGroup(LineModeGroup),
+    AdditionalProperty(AdditionalProperty),
+    Children(Children),
+
+}
+
+

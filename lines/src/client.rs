@@ -1,7 +1,7 @@
-use async_trait::async_trait;
+
 use reqwest;
-use serde_json::{Value, from_str};
-use crate::datastructs::QuerySearch;
+use serde_json::{Value, from_str, from_value};
+use crate::datastructs::{DataStruct, QuerySearch};
 
 #[derive(Debug)]
 pub enum TflError {
@@ -9,69 +9,82 @@ pub enum TflError {
     HttpError(reqwest::Error),
 }
 
-const ROOT: &str = "https://api.tfl.gov.uk/";
 
-#[async_trait]
+
 pub trait Request {
-    fn url(&self) -> &str;
-
-    fn req(&self) -> reqwest::Client {
-        reqwest::Client::new()
-    }
-
-    async fn fetch(&self) -> Result<String, TflError> {
-        let req = self.req();
-        let url = format!("{}/{}", ROOT, &self.url());
-        let req = req.get(url).send().await;
-        if let Ok(req) = req {
-            if let Ok(text) = req.text().await { return Ok(text) }
-        }
-        Err(TflError::ApiError("I suck".to_string()))
+    fn req(&self) -> reqwest::blocking::Client {
+        reqwest::blocking::Client::new()
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct Client<S: AsRef<str>> {
-    api_key: S,
-    req: reqwest::Client,
+pub struct Client {
+    api_key: String,
+    root: String,
+    url: Option<String>
 }
 
-impl<S: AsRef<str>> Client<S> {
-    pub fn new(api_key: S) -> Self {
+impl Client {
+    pub fn new(api_key: &str) -> Self {
         Self {
-            api_key,
-            req: reqwest::Client::new(),
+            api_key: api_key.to_string(),
+            root: "https://api.tfl.gov.uk/".to_string(),
+            url: None
         }
     }
 
-    pub fn url(&self) -> &str {
-        "version"
+    fn modify_endpoint(mut self, endpoint: &str) -> Self {
+        self.url = None;
+        self.url = Some(endpoint.to_string());
+        return self
     }
 
-    pub fn get_client(&self) -> &reqwest::Client {
-        &self.req
-    } 
-
-    pub async fn version(&self) -> Result<String, TflError> {
-        let url = format!("{}/{}", ROOT, &self.url());
-        let resp = self.req.get(url).send().await;
-        match resp {
-            Ok(resp) => return Ok(resp.text().await.unwrap()),
-            Err(e) => return Err(TflError::HttpError(e))
-        }
+    pub fn version(self) -> Self {
+        self.modify_endpoint("version")
     }
 
-    pub async fn query(&self, query: &str) -> Result<QuerySearch, TflError> {
-        let url = format!("{}/{}/{}", ROOT, "Line/Search/", query);
-        let req = self.req.get(url).send().await;
-        if let Ok(req) = req {
-            if let Ok(text) = req.text().await {
-                let data: QuerySearch = from_str(&text).expect("Query Search");
-                return Ok(data)
+    pub fn query(self, query: &str) -> Self {
+        self.modify_endpoint(&format!("Line/Search/{query}"))
+    }
+
+    pub fn fetch(&self) -> Result<DataStruct, TflError> {
+        if let Some(url) = &self.url {
+            let resp = self.req().get(format!("{}/{}", &self.root, url)).send();
+            match resp {
+                Ok(resp) => {
+                    let text = resp.text();
+                  
+                    match text {
+                        Ok(text) => {
+                            // return Ok(from_str(&text).unwrap())
+                            if let Ok(real_data) = from_str::<Value>(&text) {
+                                let chec: String = real_data["$type"].to_string();
+                                println!("{chec}");
+                                
+                                match chec.as_str() {
+                                    r#""Tfl.Api.Presentation.Entities.RouteSearchResponse, Tfl.Api.Presentation.Entities""# => {
+                                        let data: Result<QuerySearch, serde_json::Error> = from_value(real_data);
+                                        if let Ok(data) = data {
+                                            return Ok(DataStruct::from(data))
+                                        }
+                                    },
+
+                                    _ => return Err(TflError::ApiError(format!("Couldn't deserialize: {real_data}")))
+                                }
+                            }
+                            
+                        },
+                        Err(e) => return Err(TflError::HttpError(e))
+                        
+                    }
+                },
+                Err(e) => return Err(TflError::HttpError(e))
             }
         }
-        Err(TflError::ApiError("I suck".to_string()))
+        return Err(TflError::ApiError("Url was not instantiated".to_string()))
     }
 
 }
+
+impl Request for Client {}
 

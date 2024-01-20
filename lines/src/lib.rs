@@ -1,9 +1,6 @@
 mod client;
 mod lines;
-mod servicetypes;
-mod severity;
 mod datastructs;
-
 
 #[cfg(test)]
 mod tests {
