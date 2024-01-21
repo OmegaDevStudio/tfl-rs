@@ -22,6 +22,17 @@ pub struct QuerySearch {
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct Version {
+    #[serde(rename = "$type")]
+    pub type_field: String,
+    pub label: String,
+    pub timestamp: String,
+    pub version: String,
+}
+
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SearchMatch {
     #[serde(rename = "$type")]
     pub type_field: String,
@@ -192,6 +203,7 @@ pub struct Children {
     pub stop_letter: Option<String>,
 }
 
+impl JsonTrait for Version {}
 
 impl JsonTrait for QuerySearch {}
 impl JsonTrait for SearchMatch {}
@@ -212,6 +224,7 @@ impl JsonTrait for Children {}
 #[derive(Debug, Deserialize, Serialize)]
 #[enum_dispatch(JsonTrait)]
 pub enum DataStruct {
+    Version(Version),
     QuerySearch(QuerySearch),
     SearchMatch(SearchMatch),
     LineRouteSection(LineRouteSection),

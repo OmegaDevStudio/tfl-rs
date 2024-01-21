@@ -8,12 +8,20 @@ use datastructs::{DataStruct, QuerySearch, SearchMatch};
 
 fn main() { 
     let client = Client::new("abcd");
-    let res: DataStruct = client.query("205").fetch().unwrap();
+    let res: DataStruct = client.version().fetch().unwrap();
 
-    if let DataStruct::QuerySearch(data) = res {
-        for matched in data.search_matches {
-            println!("{}", matched.line_name);
-        }
+    match res {
+        DataStruct::QuerySearch(data) => {
+            for matched in data.search_matches {
+                println!("{}", matched.line_name);
+            }
+        },
+
+        DataStruct::Version(data) => {
+            println!("{}", data.type_field)
+        },
+
+        _ => ()
     }
 
 }

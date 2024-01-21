@@ -1,7 +1,8 @@
 
 use reqwest;
 use serde_json::{Value, from_str, from_value};
-use crate::datastructs::{DataStruct, QuerySearch};
+use crate::datastructs::{DataStruct, QuerySearch, Version};
+use crate::lines::Line;
 
 #[derive(Debug)]
 pub enum TflError {
@@ -47,6 +48,10 @@ impl Client {
         self.modify_endpoint(&format!("Line/Search/{query}"))
     }
 
+    pub fn route(self, line: Line) -> Self {
+        self.modify_endpoint(&format!("{}", line))
+    }
+
     pub fn fetch(&self) -> Result<DataStruct, TflError> {
         if let Some(url) = &self.url {
             let resp = self.req().get(format!("{}/{}", &self.root, url)).send();
@@ -68,6 +73,13 @@ impl Client {
                                             return Ok(DataStruct::from(data))
                                         }
                                     },
+                                    r#""Tfl.Api.Common.ApiVersionInfo, Tfl.Api.Common""# => {
+                                
+                                        let data: Result<Version, serde_json::Error> = from_value(real_data);
+                                        if let Ok(data) = data {
+                                            return Ok(DataStruct::from(data))
+                                        }
+                                    }
 
                                     _ => return Err(TflError::ApiError(format!("Couldn't deserialize: {real_data}")))
                                 }

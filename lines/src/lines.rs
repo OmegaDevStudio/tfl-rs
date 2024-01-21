@@ -32,6 +32,22 @@ impl Line {
         }
     }
 
+    fn line(&self) -> &str {
+        match self {
+            Self::District => "Line/District",
+            Self::Circle => "Line/Circle",
+            Self::Elizabeth => "Line/Elizabeth",
+            Self::Bakerloo => "Line/Bakerloo",
+            Self::Central => "Line/Central",
+            Self::Jubilee => "Line/Jubilee",
+            Self::Metropolitan => "Line/Metropolitan",
+            Self::HammersmithCity => "Line/Hammersmith-City",
+            Self::Northern => "Line/Northern",
+            Self::Piccadilly => "Line/Picadilly",
+            Self::Victoria => "Line/Victoria",
+            Self::WaterlooCity => "Line/Waterloo-City"
+        }
+    }
     fn route(&self) -> &str {
         match self {
             Self::District => "Line/District/Route",
