@@ -8,7 +8,7 @@ use datastructs::{DataStruct, QuerySearch, SearchMatch};
 
 fn main() { 
     let client = Client::new("abcd");
-    let res: DataStruct = client.version().fetch().unwrap();
+    let res: DataStruct = client.route(Line::Central.line()).fetch().unwrap();
 
     match res {
         DataStruct::QuerySearch(data) => {
@@ -20,6 +20,8 @@ fn main() {
         DataStruct::Version(data) => {
             println!("{}", data.type_field)
         },
+
+        DataStruct::LineRoute(data) => println!("{}", data.type_field),
 
         _ => ()
     }

@@ -1,7 +1,7 @@
 
 use reqwest;
 use serde_json::{Value, from_str, from_value};
-use crate::datastructs::{DataStruct, QuerySearch, Version, LineData};
+use crate::datastructs::{DataStruct, QuerySearch, Version, LineRoute};
 use crate::lines::Line;
 
 #[derive(Debug)]
@@ -71,38 +71,54 @@ impl Client {
                         Ok(text) => {
                             // return Ok(from_str(&text).unwrap())
                             if let Ok(real_data) = from_str::<Value>(&text) {
-                                let chec: String = real_data["$type"].to_string();
-                                println!("{chec}");
-                                
-                                match chec.as_str() {
-                                    r#""Tfl.Api.Presentation.Entities.RouteSearchResponse, Tfl.Api.Presentation.Entities""# => {
-                                        let data: Result<QuerySearch, serde_json::Error> = from_value(real_data);
-                                        if let Ok(data) = data {
-                                            return Ok(DataStruct::from(data))
+
+                                match real_data {
+
+                                    Value::Array(_) => {
+                                        if real_data[0]["$type"] == "Tfl.Api.Presentation.Entities.Line, Tfl.Api.Presentation.Entities" {
+                                            for data in real_data.as_array().unwrap() {
+                                                let data: Result<LineRoute, serde_json::Error> = from_value(data.to_owned());
+                                                if let Ok(data) = data {
+                                                    return Ok(DataStruct::from(data))
+                                                }
+                                            }
                                         }
                                     },
-                                    r#""Tfl.Api.Common.ApiVersionInfo, Tfl.Api.Common""# => {
+                                    _ => (),
+                                }
+
+                                match &real_data["$type"] {
                                 
-                                        let data: Result<Version, serde_json::Error> = from_value(real_data);
-                                        if let Ok(data) = data {
-                                            return Ok(DataStruct::from(data))
+                                    Value::String(v) => {
+                                        match v.as_str() {
+                                            "Tfl.Api.Presentation.Entities.RouteSearchResponse, Tfl.Api.Presentation.Entities" => {
+                                                let data: Result<QuerySearch, serde_json::Error> = from_value(real_data);
+                                                if let Ok(data) = data {
+                                                    return Ok(DataStruct::from(data))
+                                                }
+                                            },
+                                            "Tfl.Api.Common.ApiVersionInfo, Tfl.Api.Common" => {
+                                                let data: Result<Version, serde_json::Error> = from_value(real_data);
+                                                if let Ok(data) = data {
+                                                    return Ok(DataStruct::from(data))
+                                                }
+                                            },
+                                            "Tfl.Api.Presentation.Entities.Line, Tfl.Api.Presentation.Entities" => {
+                                                let data: Result<LineRoute, serde_json::Error> = from_value(real_data.clone());
+                                                if let Ok(data) = data {
+                                                    return Ok(DataStruct::from(data))
+                                                }
+                                            }
+                                            _ => return Err(TflError::ApiError(format!("Couldn't deserialize: {real_data:#?}")))
                                         }
+                                    
                                     }
 
-                                    r#""Tfl.Api.Presentation.Entities.Line, Tfl.Api.Presentation.Entities""#  => {
-                                        let data: Result<LineData, serde_json::Error> = from_value(real_data);
-                                        if let Ok(data) = data {
-                                            return Ok(DataStruct::from(data))
-                                        }
-                                    }
-
-                                    _ => return Err(TflError::ApiError(format!("Couldn't deserialize: {real_data}")))
+                                    _ => return Err(TflError::ApiError(format!("Couldn't deserialize: {real_data:#?}")))
                                 }
                             }
-                            
                         },
                         Err(e) => return Err(TflError::HttpError(e))
-                        
                     }
                 },
                 Err(e) => return Err(TflError::HttpError(e))

@@ -29,8 +29,20 @@ mod tests {
     #[test]
     fn line_test() {
         let line = Line::Jubilee;
-        let resp = Client::new("abcd1234").line(&line.route()).fetch().unwrap();
-        if let DataStruct::LineData(data) = resp {
+        let resp = Client::new("abcd1234").line(&line.line()).fetch().unwrap();
+        if let DataStruct::LineRoute(data) = resp {
+            
+            assert!("Tfl.Api.Presentation.Entities.Line, Tfl.Api.Presentation.Entities" == data.type_field, "Type Returned: {:?}", data)
+        } else {
+            assert!(false, "{:?}", resp)
+        }
+    }
+
+    #[test]
+    fn route_test() {
+        let line = Line::Bakerloo;
+        let resp = Client::new("abcd1234").route(&line.route()).fetch().unwrap();
+        if let DataStruct::LineRoute(data) = resp {
             
             assert!("Tfl.Api.Presentation.Entities.Line, Tfl.Api.Presentation.Entities" == data.type_field, "Type Returned: {}", data.type_field)
         } else {

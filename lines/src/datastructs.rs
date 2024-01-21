@@ -41,7 +41,7 @@ pub struct SearchMatch {
     pub mode: String,
     pub line_name: String,
     pub line_route_section: Vec<LineRouteSection>,
-    pub matched_route_sections: Vec<Value>,
+    pub matched_route_sections: Vec<RouteSection>,
     pub matched_stops: Vec<Value>,
 }
 
@@ -205,23 +205,7 @@ pub struct Children {
     pub stop_letter: Option<String>,
 }
 
-// Line/<name>
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct LineData {
-    #[serde(rename = "$type")]
-    pub type_field: String,
-    pub id: String,
-    pub name: String,
-    pub mode_name: String,
-    pub disruptions: Vec<Value>,
-    pub created: String,
-    pub modified: String,
-    pub line_statuses: Vec<Value>,
-    pub route_sections: Vec<Value>,
-    pub service_types: Vec<ServiceType>,
-    pub crowding: Crowding,
-}
+
 
 
 
@@ -243,7 +227,7 @@ impl JsonTrait for LineModeGroup {}
 impl JsonTrait for AdditionalProperty {}
 impl JsonTrait for Children {}
 
-impl JsonTrait for LineData {}
+
 
 #[derive(Debug, Deserialize, Serialize)]
 #[enum_dispatch(JsonTrait)]
@@ -262,7 +246,6 @@ pub enum DataStruct {
     LineModeGroup(LineModeGroup),
     AdditionalProperty(AdditionalProperty),
     Children(Children),
-    LineData(LineData)
 
 }
 
