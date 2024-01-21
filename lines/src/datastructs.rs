@@ -20,6 +20,7 @@ pub struct QuerySearch {
     pub search_matches: Vec<SearchMatch>,
 }
 
+// Version
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Version {
@@ -178,6 +179,7 @@ pub struct AdditionalProperty {
     pub value: String,
 }
 
+
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Children {
@@ -203,6 +205,26 @@ pub struct Children {
     pub stop_letter: Option<String>,
 }
 
+// Line/<name>
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LineData {
+    #[serde(rename = "$type")]
+    pub type_field: String,
+    pub id: String,
+    pub name: String,
+    pub mode_name: String,
+    pub disruptions: Vec<Value>,
+    pub created: String,
+    pub modified: String,
+    pub line_statuses: Vec<Value>,
+    pub route_sections: Vec<Value>,
+    pub service_types: Vec<ServiceType>,
+    pub crowding: Crowding,
+}
+
+
+
 impl JsonTrait for Version {}
 
 impl JsonTrait for QuerySearch {}
@@ -221,6 +243,8 @@ impl JsonTrait for LineModeGroup {}
 impl JsonTrait for AdditionalProperty {}
 impl JsonTrait for Children {}
 
+impl JsonTrait for LineData {}
+
 #[derive(Debug, Deserialize, Serialize)]
 #[enum_dispatch(JsonTrait)]
 pub enum DataStruct {
@@ -238,6 +262,7 @@ pub enum DataStruct {
     LineModeGroup(LineModeGroup),
     AdditionalProperty(AdditionalProperty),
     Children(Children),
+    LineData(LineData)
 
 }
 

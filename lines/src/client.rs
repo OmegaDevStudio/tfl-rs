@@ -1,7 +1,7 @@
 
 use reqwest;
 use serde_json::{Value, from_str, from_value};
-use crate::datastructs::{DataStruct, QuerySearch, Version};
+use crate::datastructs::{DataStruct, QuerySearch, Version, LineData};
 use crate::lines::Line;
 
 #[derive(Debug)]
@@ -48,8 +48,16 @@ impl Client {
         self.modify_endpoint(&format!("Line/Search/{query}"))
     }
 
-    pub fn route(self, line: Line) -> Self {
-        self.modify_endpoint(&format!("{}", line))
+    pub fn route(self, line_route: &str) -> Self {
+        self.modify_endpoint(line_route)
+    }
+
+    pub fn stations(self, line: &str) -> Self {
+        self.modify_endpoint(line)
+    }
+
+    pub fn line(self, line: &str) -> Self {
+        self.modify_endpoint(line)
     }
 
     pub fn fetch(&self) -> Result<DataStruct, TflError> {
@@ -76,6 +84,13 @@ impl Client {
                                     r#""Tfl.Api.Common.ApiVersionInfo, Tfl.Api.Common""# => {
                                 
                                         let data: Result<Version, serde_json::Error> = from_value(real_data);
+                                        if let Ok(data) = data {
+                                            return Ok(DataStruct::from(data))
+                                        }
+                                    }
+
+                                    r#""Tfl.Api.Presentation.Entities.Line, Tfl.Api.Presentation.Entities""#  => {
+                                        let data: Result<LineData, serde_json::Error> = from_value(real_data);
                                         if let Ok(data) = data {
                                             return Ok(DataStruct::from(data))
                                         }
