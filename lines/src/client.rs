@@ -37,7 +37,7 @@ impl Client {
     fn modify_endpoint(mut self, endpoint: &str) -> Self {
         self.url = None;
         self.url = Some(endpoint.to_string());
-        return self
+        self
     }
 
     pub fn version(self) -> Self {
@@ -72,19 +72,17 @@ impl Client {
                             // return Ok(from_str(&text).unwrap())
                             if let Ok(real_data) = from_str::<Value>(&text) {
 
-                                match real_data {
-
-                                    Value::Array(_) => {
-                                        if real_data[0]["$type"] == "Tfl.Api.Presentation.Entities.Line, Tfl.Api.Presentation.Entities" {
-                                            for data in real_data.as_array().unwrap() {
-                                                let data: Result<LineRoute, serde_json::Error> = from_value(data.to_owned());
-                                                if let Ok(data) = data {
-                                                    return Ok(DataStruct::from(data))
-                                                }
+                                if let Value::Array(_) = real_data {
+                                    
+                                    if real_data[0]["$type"] == "Tfl.Api.Presentation.Entities.Line, Tfl.Api.Presentation.Entities" {
+                                        for data in real_data.as_array().unwrap() {
+                                            let data: Result<LineRoute, serde_json::Error> = from_value(data.to_owned());
+                                            if let Ok(data) = data {
+                                                return Ok(DataStruct::from(data))
                                             }
                                         }
-                                    },
-                                    _ => (),
+                                    }
+                                
                                 }
 
                                 match &real_data["$type"] {
@@ -124,7 +122,7 @@ impl Client {
                 Err(e) => return Err(TflError::HttpError(e))
             }
         }
-        return Err(TflError::ApiError("Url was not instantiated".to_string()))
+        Err(TflError::ApiError("Url was not instantiated".to_string()))
     }
 
 }
