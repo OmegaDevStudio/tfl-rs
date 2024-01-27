@@ -1,7 +1,7 @@
 
 use reqwest;
 use serde_json::{Value, from_str, from_value};
-use crate::datastructs::{DataStruct, QuerySearch, Version, LineRoute};
+use crate::datastructs::{DataStruct, LineRoute, QuerySearch, Response, StopPoint, Version};
 use crate::lines::Line;
 
 #[derive(Debug)]
@@ -60,7 +60,7 @@ impl Client {
         self.modify_endpoint(line)
     }
 
-    pub fn fetch(&self) -> Result<DataStruct, TflError> {
+    pub fn fetch(&self) -> Result<Response, TflError> {
         if let Some(url) = &self.url {
             let resp = self.req().get(format!("{}/{}", &self.root, url)).send();
             match resp {
@@ -69,19 +69,37 @@ impl Client {
                   
                     match text {
                         Ok(text) => {
-                            // return Ok(from_str(&text).unwrap())
+                            // return Ok(fro"Tfl.Api.Common.ApiVersionInfo, Tfl.Api.Commonm_str(&text).unwrap())
                             if let Ok(real_data) = from_str::<Value>(&text) {
 
-                                if let Value::Array(_) = real_data {
-                                    
-                                    if real_data[0]["$type"] == "Tfl.Api.Presentation.Entities.Line, Tfl.Api.Presentation.Entities" {
-                                        for data in real_data.as_array().unwrap() {
-                                            let data: Result<LineRoute, serde_json::Error> = from_value(data.to_owned());
-                                            if let Ok(data) = data {
-                                                return Ok(DataStruct::from(data))
+                                if let Value::Array(val) = &real_data {
+                                    match &val[0]["$type"] {
+                                        Value::String(v) => {
+                                            match v.as_str() {
+                                                "Tfl.Api.Presentation.Entities.Line, Tfl.Api.Presentation.Entities" => {
+                                                    let data = val.into_iter().map(|v| if let Ok(data) = from_value::<LineRoute>(v.to_owned()) {
+                                                        DataStruct::from(data)
+                                                    } else {
+                                                        DataStruct::from(LineRoute::default())
+                                                    }).collect();
+                                                    return Ok(Response::Multiple(data))
+                                                },
+
+                                                "Tfl.Api.Presentation.Entities.StopPoint, Tfl.Api.Presentation.Entities" => {
+                                                    let data = val.into_iter().map(|v| if let Ok(data) = from_value::<StopPoint>(v.to_owned()) {
+                                                        DataStruct::from(data)
+                                                    } else {
+                                                        DataStruct::from(StopPoint::default())
+                                                    }).collect();
+                                                    return Ok(Response::Multiple(data))
+                                                }
+                                                _ => ()
                                             }
-                                        }
+                                        },
+                                        _ => ()
                                     }
+                                    
+                    
                                 
                                 }
 
@@ -92,19 +110,19 @@ impl Client {
                                             "Tfl.Api.Presentation.Entities.RouteSearchResponse, Tfl.Api.Presentation.Entities" => {
                                                 let data: Result<QuerySearch, serde_json::Error> = from_value(real_data);
                                                 if let Ok(data) = data {
-                                                    return Ok(DataStruct::from(data))
+                                                    return Ok(Response::Single(DataStruct::from(data)))
                                                 }
                                             },
                                             "Tfl.Api.Common.ApiVersionInfo, Tfl.Api.Common" => {
                                                 let data: Result<Version, serde_json::Error> = from_value(real_data);
                                                 if let Ok(data) = data {
-                                                    return Ok(DataStruct::from(data))
+                                                    return Ok(Response::Single(DataStruct::from(data)))
                                                 }
                                             },
                                             "Tfl.Api.Presentation.Entities.Line, Tfl.Api.Presentation.Entities" => {
                                                 let data: Result<LineRoute, serde_json::Error> = from_value(real_data.clone());
                                                 if let Ok(data) = data {
-                                                    return Ok(DataStruct::from(data))
+                                                    return Ok(Response::Single(DataStruct::from(data)))
                                                 }
                                             }
                                             _ => return Err(TflError::ApiError(format!("Couldn't deserialize: {real_data:#?}")))

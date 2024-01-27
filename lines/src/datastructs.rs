@@ -10,6 +10,12 @@ pub trait JsonTrait {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub enum Response {
+    Single(DataStruct),
+    Multiple(Vec<DataStruct>)
+}
+
 // Line/Search/<query>
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

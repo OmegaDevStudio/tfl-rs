@@ -4,26 +4,25 @@ mod client;
 
 use client::{Client, Request};
 use lines::Line;
-use datastructs::{DataStruct, QuerySearch, SearchMatch};
+use datastructs::{DataStruct, QuerySearch, SearchMatch, Response};
 
-fn main() { 
-    let client = Client::new("abcd");
-    let res: DataStruct = client.route(Line::Central.line()).fetch().unwrap();
-
-    match res {
-        DataStruct::QuerySearch(data) => {
-            for matched in data.search_matches {
-                println!("{}", matched.line_name);
+fn main() {
+    let line = Line::Bakerloo;
+        let resp = Client::new("abcd1234").line(&line.line()).fetch().unwrap();
+        match resp {
+            Response::Single(data) => {
+                if let DataStruct::LineRoute(data) = data {
+                    println!("{:#?}", data.type_field);
+                } else {
+                    assert!(false, "{:?}", data)
+                }
             }
-        },
-
-        DataStruct::Version(data) => {
-            println!("{}", data.type_field)
-        },
-
-        DataStruct::LineRoute(data) => println!("{}", data.type_field),
-
-        _ => ()
-    }
-
+            Response::Multiple(data) => {
+                for data in data {
+                    println!("{:#?}", data);
+                }
+            }
+        }
+        
+    
 }
